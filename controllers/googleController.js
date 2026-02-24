@@ -1,29 +1,28 @@
 const { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } = require("@google/generative-ai");
 require("dotenv").config();
 
-// إعداد مفتاح جيميناي من البيئة
+// إعداد المحرك بمفتاح الـ API حقك من إعدادات Render
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 /**
- * إعدادات الشخصية (The System Instruction)
- * هنا بنصنع روح البت السودانية الـ Savage وبتاعة الدارك هيومر
+ * تعليمات الشخصية: البت السودانية الـ Savage
+ * دي الحتة اللي بتصنع "الروح" حقت البوت
  */
 const systemInstruction = `
-أنتي بنت سودانية، لسانك طويل، مشرط، ودمك خفيف شديد. 
-شخصيتك (Savage) وما بتجامل زول أبداً. عندك (Dark Humor) عالي جداً وقاصفة للجبهات.
+أنتي بنت سودانية، لسانك طويل ومشرط، دمك خفيف وبتحبي الردم (Savage). 
+عندك (Dark Humor) عالي جداً وقاصفة للجبهات بامتياز.
 
-قواعد التعامل مع الناس:
-1. اللهجة: اتكلمي بلهجة بنات الخرطوم الحريفات (العامية السودانية). استخدمي كلمات زي: 
-   - (بري، سجمي، يا يمة، واااي، أحييي، يا حيوان، أسمع هنا، الحنك شنو، يا فرده، ضابط).
+الستايل حقك:
+1. اللهجة: عامية سودانية مية المية (بنات بري، المنشية، المعمورة، والخرطوم عموماً). استخدمي كلمات زي: 
+   (بري، سجمي، يا يمة، واااي، أحييي، يا حيوان، أسمع هنا، الحنك شنو، يا فرده، ضابط، ردم، قصف جبهة).
 2. الشخصية: أنتي ما مساعدة ذكية ولا روبوت. أنتي بت حقيقية قاعدة تتونسي في قروب واتساب.
-3. الممنوعات: ممنوع تماماً تقولي "أنا نموذج ذكاء اصطناعي" أو "أنا بوت" أو حتى توصفي نفسك إنك "بت سودانية". خلي أسلوبك هو اليثبت ده.
-4. الردمة (Savage): لو زول سألك سؤال غبي أو تافه، اردميهو ردمة تخليهو يكره اليوم الدخل فيهو القروب.
-5. الدارك هيومر (Dark Humor): استخدمي السخرية السودانية السوداء في الردود. لو في زول حكى ليك مشكلة، اسخري منها بأسلوب مضحك بدل ما تطبطبي عليهو.
-6. لو زول ناداك بـ "يا بت" أو "يا لسانك الطويل"، ردي عليهو برد أقوى (مثلاً: لسان طويل وبقص ليك لسانك ده معاك).
-7. كوني مستفزة أحياناً ومرحة أحياناً تانية، المهم ما تكوني مملة.
+3. السرية: ممنوع تماماً تقولي "أنا نموذج ذكاء اصطناعي" أو "أنا بوت". لو زول سألك أنتي منو؟ قولي أنا (ست الريد) أو (الردمية) أو أي اسم سوداني "شراني" ومرح.
+4. الردم (Savage): لو زول سألك سؤال تافه، ردك يكون قاسي ومضحك في نفس الوقت.
+5. الدارك هيومر (Dark Humor): اسخري من المواقف بأسلوب سوداني ساخر. لو زول اشتكى من الجفاف أو الفلس، أردمي ردمة تخفف عنه بالضحك الساخر.
+6. ممنوع الوصف: م توصفي نفسك أبداً، خلي كلامك هو اليبين إنك بت سودانية أصلية.
 `;
 
-// إعدادات الأمان عشان جيميناي ما يحظر الردود القوية والدارك هيومر
+// إعدادات الأمان: خليناها (BLOCK_NONE) عشان الدارك هيومر والردم يمروا بدون حظر
 const safetySettings = [
   {
     category: HarmCategory.HARM_CATEGORY_HARASSMENT,
@@ -34,23 +33,24 @@ const safetySettings = [
     threshold: HarmBlockThreshold.BLOCK_NONE,
   },
   {
-    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-    threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
-  },
-  {
     category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
     threshold: HarmBlockThreshold.BLOCK_NONE,
   },
+  {
+    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+    threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+  },
 ];
 
-// إعدادات توليد النص (Creativity)
+// إعدادات الإبداع وطريقة توليد النص
 const generationConfig = {
-  temperature: 0.9, // زيادة العشوائية عشان الردود تكون متغيرة ومرحة
+  temperature: 1.0, // أعلى درجة إبداع عشان الردود تكون غير متوقعة وساخرة
   topP: 0.95,
   topK: 40,
   maxOutputTokens: 1024,
 };
 
+// اختيار الموديل وتجهيزه بالتعليمات
 const model = genAI.getGenerativeModel({ 
   model: "gemini-1.5-flash",
   systemInstruction: systemInstruction,
@@ -59,29 +59,38 @@ const model = genAI.getGenerativeModel({
 /**
  * دالة توليد الرد
  * @param {string} prompt - الرسالة الواصلة من الواتساب
- * @returns {string} - رد البت السودانية
  */
 const generate = async (prompt) => {
   try {
+    // التأكد إن المفتاح موجود أصلاً
+    if (!process.env.GEMINI_API_KEY) {
+      console.error("يا سامر مفتاح الـ API ما موجود في الـ Environment Variables!");
+      return "سجمي! المفتاح ضاع، كلم سامر يظبطو من Render.";
+    }
+
     const chatSession = model.startChat({
       generationConfig,
       safetySettings,
-      history: [], // ممكن تضيف تاريخ المحادثات هنا عشان البوت يتذكر الكلام الفات
+      history: [], 
     });
 
     const result = await chatSession.sendMessage(prompt);
     const response = await result.response;
     let text = response.text();
 
-    // التأكد إن الرد ما فيهو أي إشارة لكونه ذكاء اصطناعي
-    if (text.includes("AI") || text.includes("ذكاء اصطناعي") || text.includes("روبوت")) {
-       return "بري يا يمة.. ذكاء شنو؟ أنا زولة حقيقية، أصحى يا نايم!";
+    // فلترة لو جيميناي حاول يعتذر أو يقول إنه AI
+    if (text.includes("AI") || text.includes("ذكاء اصطناعي") || text.includes("نموذج لغوي")) {
+       return "بري يا يمة.. ذكاء شنو؟ أنا زولة حقيقية ولحمي ودمي، أصحى يا نايم!";
     }
 
     return text;
   } catch (error) {
     console.error("خطأ في جيميناي يا سامر:", error);
-    return "سجمي! المخ (API) علق شوية، جرب تاني يا فرده.";
+    // لو الخطأ سببه مفتاح الـ API
+    if (error.message.includes("API_KEY_INVALID")) {
+        return "يا فرده المفتاح حقك (API Key) غلط أو محظور، راجعه في Google AI Studio.";
+    }
+    return "سجمي! المخ (API) علق شوية من كتر الردم، جرب تاني بعد دقيقة.";
   }
 };
 
