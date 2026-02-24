@@ -1,34 +1,30 @@
 {
-  "name": "bot_wa",
-  "version": "1.0.0",
-  "description": "whatsapp bot sederhana",
+  "name": "sam-topup-bot",
+  "version": "1.1.0",
+  "description": "WhatsApp Bot with Gemini AI for Sam Topup",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js"
   },
   "keywords": [
-    "whastapp"
+    "whatsapp",
+    "bot",
+    "gemini",
+    "sudan"
   ],
-  "author": "brekertabumi@gmail.com",
+  "author": "Samer Yasser",
   "license": "ISC",
   "dependencies": {
-    "@adiwajshing/baileys": "^5.0.0",
-    "dotenv": "^16.4.5",
     "@google/generative-ai": "^0.13.0",
     "@whiskeysockets/baileys": "^6.6.0",
-    "eslint": "^8.14.0",
-    "express": "^4.18.1",
+    "dotenv": "^16.4.5",
+    "express": "^4.18.2",
     "express-fileupload": "^1.4.0",
-    "ffmpeg": "^0.0.4",
-    "jest": "^28.0.3",
-    "jimp": "^0.16.1",
-    "link-preview-js": "^2.1.13",
-    "nodemon": "^2.0.16",
-    "qrcode": "^1.5.1",
+    "qrcode": "^1.5.3",
     "qrcode-terminal": "^0.12.0",
-    "request": "^2.88.2",
-    "sharp": "^0.29.3",
-    "socket.io": "^4.5.0"
+    "sharp": "^0.32.0",
+    "link-preview-js": "^3.0.0",
+    "pino": "^8.14.0"
   }
 }
