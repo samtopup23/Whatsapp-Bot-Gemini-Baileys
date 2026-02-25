@@ -11,6 +11,7 @@ const qrcode = require("qrcode");
 const fs = require("fs");
 const pino = require("pino");
 
+// استدعاء دالة التوليد المحدثة التي تدعم الذاكرة
 const { generate } = require("./googleController");
 
 const store = makeInMemoryStore({
@@ -45,7 +46,7 @@ const connectToWhatsApp = async () => {
         connectToWhatsApp();
       }
     } else if (connection === "open") {
-      console.log("الربط تم! البوت السوداني جاهز.");
+      console.log("الربط تم بنجاح يا سامر! سوزي هسي جاهزة للونسة والردم.");
     }
     if (update.qr) {
       qr = update.qr;
@@ -59,21 +60,29 @@ const connectToWhatsApp = async () => {
     if (type === "notify" && !messages[0].key.fromMe) {
       const m = messages[0];
       const pesan = m.message?.conversation || m.message?.extendedTextMessage?.text || "";
-      const noWa = m.key.remoteJid;
+      const noWa = m.key.remoteJid; // هذا هو الرقم الذي سنستخدمه كمعرف للذاكرة
 
       if (!pesan) return;
       await sock.readMessages([m.key]);
 
       try {
-        const response = await generate(pesan);
+        // تمرير الرقم والرسالة معاً لتفعيل نظام الذاكرة المستمرة
+        const response = await generate(noWa, pesan);
+        
         if (response) {
+          // إضافة تأثير "جاري الكتابة" لإضفاء طابع بشري
           await sock.sendPresenceUpdate('composing', noWa);
+          
           setTimeout(async () => {
-            await sock.sendMessage(noWa, { text: response }, { quoted: m });
+            await sock.sendMessage(
+              noWa, 
+              { text: response }, 
+              { quoted: m } // الرد كـ (Reply) لجعل المحادثة تبدو كأنها ونسة بشرية
+            );
           }, 1500);
         }
       } catch (error) {
-        console.error("خطأ جيميناي:", error);
+        console.error("خطأ في معالجة رسالة سوزي:", error);
       }
     }
   });
