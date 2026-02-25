@@ -93,7 +93,7 @@ const generate = async (noWa, prompt) => {
       return "يا سامر.. المفتاح (GEMINI_API_KEY) مافي، ظبطو يا فرده.";
     }
 
-    const MODEL_NAME = (process.env.GEMINI_MODEL || "gemini-1.5-flash").trim();
+    const MODEL_NAME = (process.env.GEMINI_MODEL || "gemini-2.5-flash").trim();
     const model = genAI.getGenerativeModel({ 
         model: MODEL_NAME,
         systemInstruction: systemInstruction 
@@ -128,7 +128,7 @@ const generate = async (noWa, prompt) => {
     console.error("خطأ جيميناي الحقيقي:", {
       message: error?.message,
     });
-    return "سجمي! حصل خطأ حقيقي: " + (error?.message || "Unknown error");
+    return "ابرد  " + (error?.message || "Unknown error");
   }
 };
 
