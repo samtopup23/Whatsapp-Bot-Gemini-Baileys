@@ -52,7 +52,7 @@ async function generate(noWa, prompt) {
     try {
         const userId = crypto.createHash("sha1").update(String(noWa)).digest("hex");
         const model = genAI.getGenerativeModel({ 
-            model: "gemini-2.5-flash", 
+            model: "gemini-1.5-flash", 
             systemInstruction,
             safetySettings: [{ category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE }]
         });
