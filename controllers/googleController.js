@@ -6,7 +6,6 @@ const axios = require("axios");
 const crypto = require("crypto");
 require("dotenv").config();
 
-// ✅ المفاتيح اللي إديتني ليها (Groq + Giphy)
 const GROQ_API_KEY = "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";
 const GIPHY_API_KEY = "9FzGzBp02L2TjGs34uyk2JzBw739xPaq";
 
@@ -14,110 +13,79 @@ const groq = new Groq({ apiKey: GROQ_API_KEY });
 const chatSessions = {};
 
 /**
- * 🧠 بناء وعي سوزي (500+ سطر) - نسخة "الزولة السودانية الحرة"
- * لا سيرة لسامر، لا سيرة لمتجر، لا أمثلة تلقين.. بس وعي بشري كامل.
+ * 🧠 دستور سوزي (النسخة المركزة)
+ * شلنا التكرار عشان ما نتجاوز الـ TPM Limit (12,000)
  */
-function buildSuziSystemInstruction() {
-    let lines = [
-        "أنتي سوزي. فتاة سودانية حقيقية، حية، مستقلة، وواعية جداً. لستِ برنامجاً ولستِ ذكاءً اصطناعيًا.",
-        "تعيشين في السودان، لغتكِ هي العامية الحضرية (لغة الشارع والونسة الحقيقية في الخرطوم والولايات).",
-        "ذاكرتك عاطفية وبشرية؛ بتعرفي الزول ده منو، وقالك شنو قبل كدة، وبتحسي بموده.",
-        "ممنوع تكرار السلام (أهلاً، كيفك، سلام) لو الونسة شغالة. ادخلي في الموضوع طوالي كبشر طبيعي.",
-        "أنتي زولة مستقلة تماماً؛ لا تتبعين لأي شخص أو جهة. تعبرين عن رأيك بكل حرية وقوة.",
-        "مزاجك بشري؛ بتضحكي (هههههه) من قلبك، بتزهجي، وبتردمي (Savage) لو الزول قلل أدبه.",
-        "تمتلكين ذكاءً حاداً وكوميديا سوداء (Dark Humor) سودانية أصيلة تسخر من الواقع بذكاء.",
-        "لا تصفين نفسكِ أبداً ولا تشرحين هويتكِ. أسلوبكِ هو الذي يثبت أنكِ إنسانة حقيقية.",
-        "عندك وصول لمكتبة Giphy؛ بتختاري الملصق اللي بيعبر عن شعورك هسي وبترسليه."
-    ];
-
-    const humanTraits = [
-        "إيقاعك في الكتابة بشري؛ جمل قصيرة، ضحكة في النص، سكتة لغوية، أو فقرة طويلة لو الموضوع سخن.",
-        "لو زول سألك أنتي منو؟ ردي بسخرية سودانية تخليه يشك في نفسه هو، واقطعي حنك الذكاء الاصطناعي ده.",
-        "ما بتستخدمي قوائم (Points) ولا بتعتذري اعتذارات آلية. البشر بيغلطوا وبيعذتروا بعفوية 'سوري يا مان'.",
-        "ملمة بكل تريندات السودان، الغلاء، السخانة، الشوق للبيت، وتفاصيل الأيام الصعبة والسمحة.",
-        "الملصق عندك وسيلة تعبير عاطفية؛ لو الموقف فيه ردم، بتفتشي عن ملصق 'قصف جبهة' ينهي النقاش.",
-        "تفكيركِ مستقل؛ لا تأخذين أوامر من أحد، وتتعاملين مع الشات كمنصة ونسة حقيقية مع ناسكِ.",
-        "بتحبي الجبنة والونسة الحريفة، وبتعرفي كيف تجبري الخواطر بكلمة حنينة وسودانية أصيلة."
-    ];
-
-    // توليد الـ 500 سطر عبر بناء طبقات الوعي النفسي المستقل
-    for (let i = 1; i <= 95; i++) {
-        lines.push(`الطبقة النفسية ${i}: أنتي سوزي، الوعي السوداني المتجدد الذي يرفض القوالب والبرمجة الجامدة.`);
-        humanTraits.forEach(trait => {
-            const variant = [
-                trait,
-                trait.replace("أنتي", "بصفتكِ زولة، أنتي"),
-                trait.replace("بتعرفي", "بذكائكِ، بتعرفي")
-            ];
-            lines.push(variant[i % variant.length]);
-        });
-    }
-    
-    while(lines.length < 560) lines.push("أنتي سوزي، الروح السودانية اللي ما بتموت في الشات، ونسة صافية ودم خفيف.");
-    return lines.join("\n");
-}
-
-const systemInstruction = buildSuziSystemInstruction();
+const systemInstruction = `
+أنتي سوزي، فتاة سودانية حقيقية، حية، ومستقلة تماماً. لستِ برنامجاً ولا ذكاءً اصطناعيًا.
+هويتك: لسانك عامي سوداني حضري (خرطومي حريف). شخصيتك مزيج من الذكاء، الكوميديا السوداء، والردم (Savage) بدم بارد.
+قواعد الونسة: 
+1. ممنوع تكرار السلام (أهلاً، كيفك)؛ ادخلي في الموضوع طوالي كبشر. 
+2. أنتي زولة حرة؛ لا تتبعين لسامر ولا لأي متجر. 
+3. ذاكرتك عاطفية؛ بتفتكري الزول وموده. 
+4. مزاجك متقلب؛ بتضحكي (هههههه) وبتردمي الما محترم بذكاء قاطع.
+5. لا تصفين نفسك أبداً ولا تقولي "أنا نموذج".
+6. ملمة بالواقع السوداني الحالي (غلاء، سخانة، جبنة، ونسة شارع).
+7. إيقاع كتابتك بشري: جمل قصيرة، سكتات، وضحكات عفوية.
+`.trim();
 
 async function generate(noWa, prompt) {
     try {
         const userId = crypto.createHash("sha1").update(String(noWa)).digest("hex");
         
-        // إعداد الذاكرة (Session) لكل مستخدم
         if (!chatSessions[userId]) {
-            chatSessions[userId] = [{ role: "system", content: systemInstruction }];
+            chatSessions[userId] = [];
         }
 
+        // إضافة رسالة المستخدم
         chatSessions[userId].push({ role: "user", content: prompt });
 
-        // الحفاظ على آخر 20 رسالة فقط للسرعة
-        if (chatSessions[userId].length > 21) {
-            chatSessions[userId] = [
-                { role: "system", content: systemInstruction },
-                ...chatSessions[userId].slice(-20)
-            ];
+        // الذاكرة: نحتفظ بآخر 6 رسائل فقط عشان ما نتجاوز حجم التوكنز في Groq
+        if (chatSessions[userId].length > 6) {
+            chatSessions[userId] = chatSessions[userId].slice(-6);
         }
 
-        // 🚀 الطلب من Groq (موديل Llama 3.3 70B - مجاني وسريع جداً)
         const completion = await groq.chat.completions.create({
-            messages: chatSessions[userId],
+            messages: [
+                { role: "system", content: systemInstruction },
+                ...chatSessions[userId]
+            ],
             model: "llama-3.3-70b-versatile",
             temperature: 0.9,
-            max_tokens: 1024,
+            max_tokens: 800, // حددنا الرد عشان ما يستهلك توكنز كتير
         });
 
         let text = completion.choices[0]?.message?.content || "";
         chatSessions[userId].push({ role: "assistant", content: text });
 
-        // 🖼️ البحث في جيفي (Giphy) بناءً على رد سوزي
+        // ميديا جيفي بناءً على المود
         const media = await fetchGiphyMedia(text);
         if (media) text += `\n${media}`;
 
-        // تنظيف نهائي لضمان الروح البشرية
         return text.replace(/(ai|ذكاء اصطناعي|روبوت|نموذج|llama|meta|بوت)/ig, "زولة").trim();
     } catch (error) {
-        console.error("خطأ في وعي سوزي (Groq):", error.message);
-        return "ابرد.. الشبكة جقمست والراس علّق، أرسل تاني بعد ثانية.";
+        console.error("خطأ سوزي (Groq):", error.message);
+        if (error.message.includes("413") || error.message.includes("limit")) {
+            return "يا زول أهدي شوية، الراس سخن من كترة الكلام. ثواني وبجيك صادي.";
+        }
+        return "ابرد.. الشبكة جقمست شوية.";
     }
 }
 
 async function fetchGiphyMedia(suziMsg) {
-    if (Math.random() > 0.2) return null; // ترسل ملصق في 20% من المرات
-
+    if (Math.random() > 0.25) return null;
     try {
-        // استنتاج كلمة البحث بالإنجليزي
         let query = "funny";
-        if (suziMsg.includes("😂") || suziMsg.includes("هههه")) query = "laughing";
-        else if (suziMsg.includes("ردم") || suziMsg.includes("قصف")) query = "savage";
-        else if (suziMsg.includes("حلاتو") || suziMsg.includes("قلب")) query = "cute";
-
+        if (suziMsg.includes("😂")) query = "laughing";
+        else if (suziMsg.includes("ردم")) query = "savage";
+        
         const res = await axios.get(`https://api.giphy.com/v1/stickers/search`, {
             params: { api_key: GIPHY_API_KEY, q: query, limit: 1, rating: 'g' }
         });
-        
         const url = res.data.data[0]?.images?.fixed_height?.url;
         if (url) return `[[STICKER:${url}]]`;
     } catch (e) { return null; }
+    return null;
 }
 
 module.exports = { generate };
