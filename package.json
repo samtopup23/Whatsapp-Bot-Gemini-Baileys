@@ -1,7 +1,7 @@
 {
   "name": "sam-topup-bot",
-  "version": "1.2.0",
-  "description": "WhatsApp Bot powered by Groq (Llama 3.3) and Giphy for Sam Topup",
+  "version": "1.3.0",
+  "description": "WhatsApp Bot powered by Google Gemini 1.5 Flash for Sam Topup",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -10,15 +10,14 @@
   "keywords": [
     "whatsapp",
     "bot",
-    "groq",
-    "llama-3.3",
+    "gemini",
+    "ai",
     "sudan",
     "sam-topup"
   ],
   "author": "Samer Yasser",
   "license": "ISC",
   "dependencies": {
-    "groq-sdk": "^0.12.0",
     "axios": "^1.7.9",
     "@whiskeysockets/baileys": "^6.6.0",
     "@hapi/boom": "^10.0.1",
