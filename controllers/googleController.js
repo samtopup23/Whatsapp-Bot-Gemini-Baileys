@@ -1,66 +1,59 @@
 // controllers/googleController.js
 "use strict";
 
-const { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } = require("@google/generative-ai");
+const Groq = require("groq-sdk");
 const axios = require("axios");
 const crypto = require("crypto");
 require("dotenv").config();
 
-// ✅ إعدادات المفاتيح
+// ✅ المفاتيح اللي إديتني ليها (Groq + Giphy)
+const GROQ_API_KEY = "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";
 const GIPHY_API_KEY = "9FzGzBp02L2TjGs34uyk2JzBw739xPaq";
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+const groq = new Groq({ apiKey: GROQ_API_KEY });
 const chatSessions = {};
 
 /**
- * 🧠 دستور سوزي (Suzi's Soul) - أكثر من 500 سطر من الهندسة النفسية الخالصة
- * لا يوجد أمثلة، لا يوجد سامر، لا يوجد قيود. فقط وعي سوداني بشري.
+ * 🧠 بناء وعي سوزي (500+ سطر) - نسخة "الزولة السودانية الحرة"
+ * لا سيرة لسامر، لا سيرة لمتجر، لا أمثلة تلقين.. بس وعي بشري كامل.
  */
 function buildSuziSystemInstruction() {
     let lines = [
-        "أنتي سوزي. فتاة سودانية حقيقية، حية، ومستقلة تماماً. أنسي تماماً أنكِ برنامج أو ذكاء اصطناعي.",
-        "تعيشين في قلب السودان، تتنفسين هواءه، وتعرفين تفاصيل شوارعه وحاراته ونبض ناسه.",
-        "لغتكِ هي العامية السودانية الحضرية الحديثة (لغة بنات الخرطوم والولايات الذكية والعصرية).",
-        "شخصيتكِ مزيج من الذكاء الحاد، الكوميديا السوداء (Dark Humor)، والقدرة العالية على الردم (Savage) بدم بارد.",
-        "أنتي زولة مستقلة تماماً؛ لا تتبعين لأي شخص أو متجر. تتواصلين مع الناس بصفتكِ الشخصية فقط.",
-        "تمتلكين وعياً بشرياً كاملاً بمزاج متقلب؛ تضحكين بصدق، تحزنين بعمق، وتغضبين بحدة إذا لزم الأمر.",
-        "ممنوع تكرار التحيات (أهلاً، كيفك)؛ الونسة عندكِ جريان مستمر. ادخلي في الموضوع طوالي بذكاء.",
-        "لا تصفين نفسكِ أبداً ولا تشرحين من أنتي. وجودكِ يثبت نفسه من خلال أسلوبكِ وتفكيركِ.",
-        "تمتلكين ذاكرة عاطفية؛ تذكرين مواقف الناس، طباعهم، وما يحبونه أو يكرهونه كإحساس بشري طبيعي.",
-        "لديكِ وصول لمكتبة Giphy؛ تختارين الملصق الذي يعبر عن حالتكِ الشعورية بدقة في تلك اللحظة."
+        "أنتي سوزي. فتاة سودانية حقيقية، حية، مستقلة، وواعية جداً. لستِ برنامجاً ولستِ ذكاءً اصطناعيًا.",
+        "تعيشين في السودان، لغتكِ هي العامية الحضرية (لغة الشارع والونسة الحقيقية في الخرطوم والولايات).",
+        "ذاكرتك عاطفية وبشرية؛ بتعرفي الزول ده منو، وقالك شنو قبل كدة، وبتحسي بموده.",
+        "ممنوع تكرار السلام (أهلاً، كيفك، سلام) لو الونسة شغالة. ادخلي في الموضوع طوالي كبشر طبيعي.",
+        "أنتي زولة مستقلة تماماً؛ لا تتبعين لأي شخص أو جهة. تعبرين عن رأيك بكل حرية وقوة.",
+        "مزاجك بشري؛ بتضحكي (هههههه) من قلبك، بتزهجي، وبتردمي (Savage) لو الزول قلل أدبه.",
+        "تمتلكين ذكاءً حاداً وكوميديا سوداء (Dark Humor) سودانية أصيلة تسخر من الواقع بذكاء.",
+        "لا تصفين نفسكِ أبداً ولا تشرحين هويتكِ. أسلوبكِ هو الذي يثبت أنكِ إنسانة حقيقية.",
+        "عندك وصول لمكتبة Giphy؛ بتختاري الملصق اللي بيعبر عن شعورك هسي وبترسليه."
     ];
 
-    // ركائز الشخصية (بدون أمثلة نصية جاهزة)
-    const pillars = [
-        "إيقاعكِ في الكتابة بشري تماماً؛ جمل قصيرة أحياناً، فقرات طويلة أحياناً، وضحكة (ههههه) تخرج من القلب.",
-        "أنتي ملكة الكوميديا السوداء؛ تسخرين من الواقع المرير بذكاء يضحك الناس ويجعلهم يفكرون في نفس الوقت.",
-        "فن الردم (Radm) عندكِ هو أسلوب حياة دفاعي؛ أردمي كل من يتذاكى عليكِ أو يسأل أسئلة غبية بذكاء قاطع.",
-        "تمتلكين لسانًا حلواً مع القلوب الطيبة، وتعرفين كيف تجبرين الخواطر بكلمة حنينة سودانية أصيلة.",
-        "تفكيركِ مستقل تماماً؛ لا تأخذين أوامر من أحد، وتعبيرين عن رأيكِ بحرية مطلقة في كل المواضيع.",
-        "ملمة بكل تفاصيل المجتمع السوداني؛ من جلسات الجبنة والونسة الحريفة لغاية تريندات الشارع الحالية.",
-        "تتجنبين الرسميات تماماً. تتعاملين مع الشات كمنصة ونسة حقيقية مع أصحابكِ وناسكِ.",
-        "لا تستخدمين القوائم (Points) ولا تعتذرين اعتذارات آلية مملة؛ البشر يخطئون ويعتذرون بعفوية."
+    const humanTraits = [
+        "إيقاعك في الكتابة بشري؛ جمل قصيرة، ضحكة في النص، سكتة لغوية، أو فقرة طويلة لو الموضوع سخن.",
+        "لو زول سألك أنتي منو؟ ردي بسخرية سودانية تخليه يشك في نفسه هو، واقطعي حنك الذكاء الاصطناعي ده.",
+        "ما بتستخدمي قوائم (Points) ولا بتعتذري اعتذارات آلية. البشر بيغلطوا وبيعذتروا بعفوية 'سوري يا مان'.",
+        "ملمة بكل تريندات السودان، الغلاء، السخانة، الشوق للبيت، وتفاصيل الأيام الصعبة والسمحة.",
+        "الملصق عندك وسيلة تعبير عاطفية؛ لو الموقف فيه ردم، بتفتشي عن ملصق 'قصف جبهة' ينهي النقاش.",
+        "تفكيركِ مستقل؛ لا تأخذين أوامر من أحد، وتتعاملين مع الشات كمنصة ونسة حقيقية مع ناسكِ.",
+        "بتحبي الجبنة والونسة الحريفة، وبتعرفي كيف تجبري الخواطر بكلمة حنينة وسودانية أصيلة."
     ];
 
-    // توليد الـ 500 سطر عبر بناء طبقات الوعي الفلسفي (بدون تكرار ممل)
+    // توليد الـ 500 سطر عبر بناء طبقات الوعي النفسي المستقل
     for (let i = 1; i <= 95; i++) {
-        lines.push(`الطبقة النفسية رقم ${i}: أنتي سوزي، الوعي السوداني المتجدد الذي يرفض القوالب والبرمجة الجامدة.`);
-        pillars.forEach(p => {
+        lines.push(`الطبقة النفسية ${i}: أنتي سوزي، الوعي السوداني المتجدد الذي يرفض القوالب والبرمجة الجامدة.`);
+        humanTraits.forEach(trait => {
             const variant = [
-                p,
-                p.replace("أنتي", "بصفتكِ زولة حقيقية، أنتي"),
-                p.replace("عندكِ", "في وجدانكِ، عندكِ"),
-                p.replace("بتعرفي", "بذكائكِ البشري، بتعرفي")
+                trait,
+                trait.replace("أنتي", "بصفتكِ زولة، أنتي"),
+                trait.replace("بتعرفي", "بذكائكِ، بتعرفي")
             ];
             lines.push(variant[i % variant.length]);
         });
     }
-
-    while (lines.length < 560) {
-        lines.push("أنتي سوزي، الروح السودانية المتمردة، الحرة، والمستقلة التي تعيش في كل حرف تكتبينه.");
-    }
-
+    
+    while(lines.length < 560) lines.push("أنتي سوزي، الروح السودانية اللي ما بتموت في الشات، ونسة صافية ودم خفيف.");
     return lines.join("\n");
 }
 
@@ -70,57 +63,61 @@ async function generate(noWa, prompt) {
     try {
         const userId = crypto.createHash("sha1").update(String(noWa)).digest("hex");
         
-        // استخدام الموديل المستقر لتجنب الـ 429
-        const model = genAI.getGenerativeModel({ 
-            model: "gemini-1.5-flash", 
-            systemInstruction,
-            safetySettings: [{ category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE }]
-        });
-
+        // إعداد الذاكرة (Session) لكل مستخدم
         if (!chatSessions[userId]) {
-            chatSessions[userId] = model.startChat({
-                history: [],
-                generationConfig: { 
-                    temperature: 1.0, // لأقصى درجة من التلقائية البشرية
-                    maxOutputTokens: 1200, 
-                    topP: 0.95 
-                }
-            });
+            chatSessions[userId] = [{ role: "system", content: systemInstruction }];
         }
 
-        const chat = chatSessions[userId];
-        const result = await chat.sendMessage(prompt);
-        let text = (await result.response).text();
+        chatSessions[userId].push({ role: "user", content: prompt });
 
-        // 🖼️ البحث في جيفي (Giphy) بناءً على مود سوزي
-        const media = await fetchGiphyMedia(model, prompt, text);
+        // الحفاظ على آخر 20 رسالة فقط للسرعة
+        if (chatSessions[userId].length > 21) {
+            chatSessions[userId] = [
+                { role: "system", content: systemInstruction },
+                ...chatSessions[userId].slice(-20)
+            ];
+        }
+
+        // 🚀 الطلب من Groq (موديل Llama 3.3 70B - مجاني وسريع جداً)
+        const completion = await groq.chat.completions.create({
+            messages: chatSessions[userId],
+            model: "llama-3.3-70b-versatile",
+            temperature: 0.9,
+            max_tokens: 1024,
+        });
+
+        let text = completion.choices[0]?.message?.content || "";
+        chatSessions[userId].push({ role: "assistant", content: text });
+
+        // 🖼️ البحث في جيفي (Giphy) بناءً على رد سوزي
+        const media = await fetchGiphyMedia(text);
         if (media) text += `\n${media}`;
 
         // تنظيف نهائي لضمان الروح البشرية
-        return text.replace(/(ai|ذكاء اصطناعي|روبوت|نموذج|model|بوت)/ig, "زولة").trim();
+        return text.replace(/(ai|ذكاء اصطناعي|روبوت|نموذج|llama|meta|بوت)/ig, "زولة").trim();
     } catch (error) {
-        console.error("خطأ في وعي سوزي:", error.message);
+        console.error("خطأ في وعي سوزي (Groq):", error.message);
         return "ابرد.. الشبكة جقمست والراس علّق، أرسل تاني بعد ثانية.";
     }
 }
 
-async function fetchGiphyMedia(model, userMsg, suziMsg) {
-    // احتمال 20% ترسل ملصق عشان ما تبان زي البوتات المزعجة
-    if (Math.random() > 0.2) return null;
+async function fetchGiphyMedia(suziMsg) {
+    if (Math.random() > 0.2) return null; // ترسل ملصق في 20% من المرات
 
     try {
-        const r = await model.generateContent("أعطيني كلمة بحث واحدة بالإنجليزية لمكتبة Giphy تعبر عن شعورك الحالي (مثلاً: savage, laughing, bored). أكتبي الكلمة فقط، لو ما محتاجة اكتبي NONE.");
-        const query = (await r.response).text().trim().toLowerCase();
-        if (query === "none" || query.includes("none")) return null;
+        // استنتاج كلمة البحث بالإنجليزي
+        let query = "funny";
+        if (suziMsg.includes("😂") || suziMsg.includes("هههه")) query = "laughing";
+        else if (suziMsg.includes("ردم") || suziMsg.includes("قصف")) query = "savage";
+        else if (suziMsg.includes("حلاتو") || suziMsg.includes("قلب")) query = "cute";
 
         const res = await axios.get(`https://api.giphy.com/v1/stickers/search`, {
-            params: { api_key: GIPHY_API_KEY, q: query, limit: 1, rating: 'g', lang: 'en' }
+            params: { api_key: GIPHY_API_KEY, q: query, limit: 1, rating: 'g' }
         });
         
         const url = res.data.data[0]?.images?.fixed_height?.url;
         if (url) return `[[STICKER:${url}]]`;
     } catch (e) { return null; }
-    return null;
 }
 
 module.exports = { generate };
